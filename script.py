@@ -4,7 +4,8 @@ import zipfile
 import requests
 import json
 
-BASE_FOLDER = 'D:/School/TUES-Teach/WD18-19/'
+# BASE_FOLDER = 'D:/School/TUES-Teach/WD18-19/'
+BASE_FOLDER = '/home/phased/Documents/tues-test-checker/'
 EXTRACTIONS_FOLDER = 'extractions/'
 
 file_name = sys.argv[1]
@@ -27,9 +28,26 @@ for file in os.listdir(directory):
 
 req_target = 'https://validator.w3.org/nu/?out=json'
 
-path = './' + EXTRACTIONS_FOLDER + '/' + file_name_without_extention + '/' + html_pages[0]
-data = open(path, 'rb').read()
+for file in html_pages:
+    path = './' + EXTRACTIONS_FOLDER +  file_name_without_extention + '/' + file
+    data = open(path, 'rb').read()
 
-request = requests.post(req_target, data=data, headers={'Content-Type':'text/html'})
-json_data = json.loads(request.text)
-print(json_data)
+    request = requests.post(req_target, data=data, headers={'Content-Type':'text/html'})
+    json_data = json.loads(request.text)
+
+    print("Information about page " + file + "\n")
+    for message in json_data['messages']:
+        print(message)
+
+    print("\n")
+
+
+# path = './' + EXTRACTIONS_FOLDER +  file_name_without_extention + '/' + html_pages[0]
+# data = open(path, 'rb').read()
+#
+# request = requests.post(req_target, data=data, headers={'Content-Type':'text/html'})
+# json_data = json.loads(request.text)
+#
+# print("Information about page " + html_pages[0] + "\n")
+# for message in json_data['messages']:
+#     print(message)
