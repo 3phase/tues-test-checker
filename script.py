@@ -16,7 +16,7 @@ def create_pdf_service_fields():
     pdf.cell(50, 5, 'Personalized Report', 0, 1, 'C')
     pdf.set_font('Arial', '', 15)
     pdf.cell(65)
-    pdf.cell(50, 10, 'Sample Name, ' + file_name, 0, 1, 'C')
+    pdf.cell(50, 10, file_name, 0, 1, 'C')
     pdf.set_font('Arial', '', 10)
     pdf.cell(65)
     pdf.cell(50, 3, '(raw output on the last page)', 0, 2, 'C')
@@ -28,19 +28,10 @@ def file_scope_definition(file_name):
     pdf.cell(w=10, ln=2, txt=file_name, border=0, align='L')
     pdf.ln(8)
 
-def publish_err(shorthand, line = -1):
-    if shorthand == 'encoding':
-        message = 'There\'s no indicated encoding.'
-    elif shorthand == 'doctype':
-        message='There\'s no doctype included.'
-    elif shorthand == 'no_title':
-        message='There\'s no title in the head.'
-    else:
-        message='An unrecognized error appeared.'
-
+def publish_err(msg, line = -1):
     pdf.set_font('arial', '', 11)
-    pdf.cell(w=10, ln=2, txt=message + ' Error message: ' + shorthand, border=0, align='L')
-    pdf.ln(8)
+    pdf.multi_cell(w=0, h=4, txt=msg, border=0, align='L')
+    pdf.ln(3)
 
 def publish_raw(data):
     pdf.add_page()
@@ -60,14 +51,20 @@ def string_bases(string):
         return 'doctype'
     elif 'required instance of child element “title”' in string:
         return 'no_title'
+    elif '\<center\> element is obsolete' in string:
+        return 'obsolete_center'
     else:
         return 'unrecognized'
 
-pdf = FPDF()
-raw_output = ''
 
 BASE_FOLDER = os.path.abspath('./') + '/'
 EXTRACTIONS_FOLDER = 'extractions/'
+total_score_html = 100
+pdf = FPDF()
+raw_output = ''
+page_err_msgs = []
+total_page_err_msgs = []
+req_target = 'https://validator.w3.org/nu/?out=json'
 
 file_name = sys.argv[1]
 file_name_without_extention = file_name.split('.')[0]
@@ -86,8 +83,6 @@ for file in os.listdir(directory):
     else:
         continue
 
-req_target = 'https://validator.w3.org/nu/?out=json'
-
 create_pdf_service_fields()
 
 for file in html_pages:
@@ -101,9 +96,19 @@ for file in html_pages:
     for message in json_data['messages']:
         if (message['type'] == 'error'):
             err_shortcode = string_bases(message['message'])
-            publish_err(err_shortcode)
+            msg = message['message'].replace("“", "\"")
+            msg = msg.replace("”", "\"")
+            page_err_msgs.append(msg)
         raw_output += json.dumps(json_data)
 
+    for msg in set(page_err_msgs):
+        publish_err(msg)
+
+    total_page_err_msgs += page_err_msgs
+
+result = len(set(total_page_err_msgs))
+# Some kind of formula
+print(6 - 1/6*result)
 
 publish_raw(raw_output)
 pdf.output(file_name_without_extention + '.pdf', 'F')
