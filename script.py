@@ -3,6 +3,7 @@ import sys
 import zipfile
 import requests
 import json
+import math
 from fpdf import FPDF
 
 def create_pdf_service_fields():
@@ -43,6 +44,14 @@ def publish_raw(data):
     pdf.ln(10)
     pdf.set_font('Arial', '', 10)
     pdf.multi_cell(w=0, h=4, txt=data, border=0, align='L')
+
+def publish_result(grade):
+    round_grade = math.ceil(grade)
+    pdf.ln(20)
+    pdf.set_font('Arial', 'B', 10)
+    # pdf.cell(w=75)
+    pdf.multi_cell(w=0, h=4, txt='HTML Grade: ' + repr(grade) + ' ('+ repr(round_grade) + ')', align='R')
+
 
 def string_bases(string):
     if 'character encoding' in string:
@@ -108,7 +117,9 @@ for file in html_pages:
 
 result = len(set(total_page_err_msgs))
 # Some kind of formula
-print(6 - 1/6*result)
+final_html_grade = 6 - 1/6*result
+# print(6 - 1/6*result)
+publish_result(final_html_grade)
 
 publish_raw(raw_output)
 pdf.output(file_name_without_extention + '.pdf', 'F')
